@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Button, Text, ScrollView, Image, Pressable, Modal } from 'react-native';
+import { StyleSheet, View, TextInput, Button, Text, ScrollView, Image, Pressable, Modal } from 'react-native';
 
 const BACKEND_URL = 'http://192.168.5.114:3001';
 
@@ -7,12 +7,12 @@ export default function HomeScreen() {
   const [message, setMessage] = useState('');
   const [reply, setReply] = useState('');
   const [displayedReply, setDisplayedReply] = useState('');
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState<{ url: string }[]>([]);
   const [visibleCount, setVisibleCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [dots, setDots] = useState('');
-  const [selectedImage, setSelectedImage] = useState(null);
-  const intervalRef = useRef(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function sendMessage() {
     setLoading(true);
@@ -43,12 +43,12 @@ export default function HomeScreen() {
     intervalRef.current = setInterval(() => {
       i++;
       setDisplayedReply(reply.slice(0, i));
-      if (i >= reply.length) {
+      if (i >= reply.length && intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     }, 20);
 
-    return () => clearInterval(intervalRef.current);
+    return () => {if (intervalRef.current) clearInterval(intervalRef.current);};
   }, [reply]);
 
   // Cycling dots while loading
@@ -86,45 +86,73 @@ export default function HomeScreen() {
   }, [images]);
 
   return (
-    <ScrollView style={{ padding: 20, marginTop: 50 }}>
+    <ScrollView style={s.container}>
       <TextInput
         value={message}
         onChangeText={setMessage}
         placeholder="Ask for a style idea..."
-        style={{ borderWidth: 1, padding: 10, marginBottom: 10 }}
+        style={s.input}
       />
 
       <Button title={loading ? `Sending${dots}` : 'Send'} onPress={sendMessage} disabled={loading} />
-      {displayedReply ? <Text style={{ marginTop: 20 }}>{displayedReply}</Text> : null}
+      {displayedReply ? <Text style={s.replyText}>{displayedReply}</Text> : null}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 20, gap: 10 }}>
+      <View style={s.imageGrid}>
         {images.slice(0, visibleCount).map((img, i) => (
           <Pressable key={i} onPress={() => setSelectedImage(img.url)}>
-            <Image
-              source={{ uri: img.url }}
-              style={{ width: 100, height: 100, borderRadius: 8 }}
-            />
+            <Image source={{ uri: img.url }} style={s.thumbnail} />
           </Pressable>
         ))}
       </View>
 
       <Modal visible={!!selectedImage} transparent={true} onRequestClose={() => setSelectedImage(null)}>
         <Pressable
-          style={{
-            flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.9)',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
+          style={s.modalBackdrop}
           onPress={() => setSelectedImage(null)}
         >
           <Image
-            source={{ uri: selectedImage }}
-            style={{ width: '90%', height: '70%' }}
+            source={{ uri: selectedImage ?? undefined}}
+            style={s.modalImage}
             resizeMode="contain"
           />
         </Pressable>
       </Modal>
     </ScrollView>
   );
-}9
+}
+
+const s = StyleSheet.create({
+  container: {
+    padding: 20,
+    marginTop: 50,
+  },
+  input: {
+    borderWidth: 1,
+    padding: 10,
+    marginBottom: 10,
+  },
+  replyText: {
+    marginTop: 20,
+  },
+  imageGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 20,
+    gap: 10,
+  },
+  thumbnail: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: '90%',
+    height: '70%',
+  },
+});
