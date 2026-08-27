@@ -14,6 +14,7 @@ export default function HomeScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  //sends input text to backend's Gemeni API
   async function sendMessage() {
     setLoading(true);
     setDisplayedReply('');
@@ -51,7 +52,7 @@ export default function HomeScreen() {
     return () => {if (intervalRef.current) clearInterval(intervalRef.current);};
   }, [reply]);
 
-  // Cycling dots while loading
+  // Loading dots on the send button
   useEffect(() => {
     if (!loading) {
       setDots('');
@@ -90,7 +91,7 @@ export default function HomeScreen() {
       <TextInput
         value={message}
         onChangeText={setMessage}
-        placeholder="Ask for a style idea..."
+        placeholder= "Ask for a style idea..."
         style={s.input}
       />
 
@@ -100,16 +101,13 @@ export default function HomeScreen() {
       <View style={s.imageGrid}>
         {images.slice(0, visibleCount).map((img, i) => (
           <Pressable key={i} onPress={() => setSelectedImage(img.url)}>
-            <Image source={{ uri: img.url }} style={s.thumbnail} />
+            <Image source={{ uri: img.url }} style={s.images} />
           </Pressable>
         ))}
       </View>
 
-      <Modal visible={!!selectedImage} transparent={true} onRequestClose={() => setSelectedImage(null)}>
-        <Pressable
-          style={s.modalBackdrop}
-          onPress={() => setSelectedImage(null)}
-        >
+      <Modal visible={selectedImage != null} transparent={true} onRequestClose={() => setSelectedImage(null)}>
+        <Pressable style={s.modalBackdrop} onPress={() => setSelectedImage(null)}>
           <Image
             source={{ uri: selectedImage ?? undefined}}
             style={s.modalImage}
@@ -140,7 +138,7 @@ const s = StyleSheet.create({
     marginTop: 20,
     gap: 10,
   },
-  thumbnail: {
+  images: {
     width: 100,
     height: 100,
     borderRadius: 8,
